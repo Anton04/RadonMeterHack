@@ -11,7 +11,7 @@ tcp_ota.sendcomplete = function(sk)
     --Send the rest if any. 
     if #tcp_ota.response > 0 then 
         msg = table.remove(tcp_ota.response, 1)
-        if msg ~= nil then 
+        if (msg ~= nil and tcp_ota.conn ~= nil) then 
             tcp_ota.conn:send(msg)
         end
         return
@@ -82,25 +82,40 @@ tcp_ota.startServer= function()
    sv=net.createServer(net.TCP, 180)
    sv:listen(8080,   function(connection)
       print("Wifi console connected.")
-      tcp_ota.conn = connection              
+
+     -- if (tcp_ota.conn ~= nil) then
+     --       tcp_ota.conn:close()
+     --       tcp_ota.conn = nil
+     --       tcp_ota.sending = false
+     -- end
+     -- tcp_ota.conn = connection              
       --print(s_output)
       
       
-      tcp_ota.loggedin = false
+      --tcp_ota.loggedin = false
 
-      tcp_ota.s_output("Enter password:")
+      --tcp_ota.s_output("Enter password:")
+      connection:send("Enter password:\r\n")
       
-      tcp_ota.conn:on("receive", function(connection, pl)
-         if (tcp_ota.loggedin==false) then
+      connection:on("receive", function(connection, pl)
+         if (connection ~= tcp_ota.conn or tcp_ota.loggedin==false) then
             if (pl=="nrj!!!\r\n") then
                 tcp_ota.loggedin=true
                 --node.output(s_output,1)
      
-                print("Logged in!\r\n> ")
+                connection:send("\r\nLogged in!\r\n> ")
+
+                if (connection ~= tcp_ota.conn) then
+                    old_conn = tcp_ota.conn
+                    tcp_ota.conn = connection
+                    if (old_conn~=nil) then
+                        old_conn:close()
+                    end
+                end
 
                 
             else
-                tcp_ota.s_output("Enter password:\r\n")
+                connection:send("Enter password:\r\n")
             end
 
             return 
@@ -113,10 +128,12 @@ tcp_ota.startServer= function()
          end 
       end)
       
-      tcp_ota.conn:on("disconnection",function(connection)
+      connection:on("disconnection",function(connection)
          --node.output(nil,1)
-         tcp_ota.conn = nil
-         tcp_ota.loggedin = false
+         if (connection == tcp_ota.conn) then
+             tcp_ota.conn = nil
+             tcp_ota.loggedin = false
+         end
          
       end)
    end)  

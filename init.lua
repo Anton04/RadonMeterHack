@@ -1,5 +1,10 @@
+gpio.mode(6,gpio.INPUT, gpio.FLOAT)
+gpio.mode(7,gpio.INPUT, gpio.FLOAT)
+
 -- load credentials, 'SSID' and 'PASSWORD' declared and initialize in there
 dofile("credentials.lua")
+
+ 
    
 function startup()
     if file.open("init.lua") == nil then
@@ -40,6 +45,6 @@ wifi.sta.config(SSID, PASSWORD,1)
 --        print("WiFi connection established, IP address: " .. wifi.sta.getip())
         print("You have 3 seconds to abort")
         print("Waiting...")
-        tmr.alarm(0, 3000, 0, startup)
+        tmr.alarm(0, 10000, 0, startup)
   --  end
 --end)
